@@ -73,6 +73,7 @@ def fetch_top_n_jobs(search_url, label, top_n=10):
     result = []
 
     for job in jobs[:top_n]:
+        print(f"[{label}] Job keys: {list(job.keys())}") 
         # ----- Stable ID -----
         job_id = (
             job.get("id")
