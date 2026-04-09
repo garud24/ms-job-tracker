@@ -81,13 +81,19 @@ def fetch_top_n_jobs(search_url, label, top_n=10):
 
         locs = job.get("locations") or job.get("standardizedLocations")
         if isinstance(locs, list) and locs:
-            location = ", ".join(str(x) for x in locs if x)
+            first = locs[0]
+            if isinstance(first, dict):
+                location = ", ".join(str(v) for v in first.values() if v)
+            else:
+                location = ", ".join(str(x) for x in locs if x)
         elif isinstance(locs, str) and locs.strip():
             location = locs.strip()
         else:
             location = "Unknown location"
 
         url = job.get("positionUrl") or ""
+        if url.startswith("/"):
+            url = f"https://jobs.careers.microsoft.com/global/en{url}"
 
         result.append({
             "id": job_id,
