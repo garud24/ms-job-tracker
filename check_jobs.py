@@ -73,16 +73,49 @@ def fetch_top_n_jobs(search_url, label, top_n=10):
     result = []
 
     for job in jobs[:top_n]:
-        job_id = str(job.get("jobId") or job.get("id") or "").strip()
+        # ----- Stable ID -----
+        job_id = (
+            job.get("id")
+            or job.get("jobId")
+            or job.get("displayJobId")
+            or job.get("positionId")
+            or job.get("position_id")
+        )
         if not job_id:
-            job_id = hashlib.md5(str(job).encode()).hexdigest()
+            job_id = hashlib.md5(json.dumps(job, sort_keys=True).encode("utf-8")).hexdigest()
 
-        title = job.get("title") or job.get("jobTitle") or "Unknown title"
-        location = job.get("location") or job.get("primaryLocation") or "Unknown location"
-        url = job.get("url") or job.get("detailsUrl") or job.get("jobUrl") or ""
+        # ----- Title -----
+        raw_name = job.get("name") or job.get("title") or job.get("jobTitle")
+        if isinstance(raw_name, str) and raw_name.strip():
+            title = raw_name.strip()
+        else:
+            title = "Unknown title"
+
+        # ----- Location -----
+        locs = job.get("locations") or job.get("standardizedLocations")
+
+        if isinstance(locs, list) and locs:
+            first = locs[0]
+            if isinstance(first, dict):
+                parts = [str(v) for v in first.values() if v]
+                location = ", ".join(parts) if parts else "Unknown location"
+            else:
+                location = ", ".join(str(x) for x in locs)
+        elif isinstance(locs, str) and locs.strip():
+            location = locs.strip()
+        else:
+            location = job.get("primaryLocation") or job.get("location") or "Unknown location"
+
+        # ----- URL -----
+        url = (
+            job.get("applyUrl")
+            or job.get("detailsUrl")
+            or job.get("detailsURL")
+            or ""
+        )
 
         result.append({
-            "id": job_id,
+            "id": str(job_id),
             "title": title,
             "location": location,
             "url": url,
